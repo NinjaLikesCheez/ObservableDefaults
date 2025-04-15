@@ -51,18 +51,18 @@ extension DefaultsBackedMacro: AccessorMacro {
         }
 
         // Check if the type is optional, if so, report an error (supporting ? ! and Optional three ways of judgment)
-        if let typeAnnotation = binding.typeAnnotation {
-            let typeSyntax = typeAnnotation.type
-            let typeName = typeSyntax.description.trimmingCharacters(in: .whitespacesAndNewlines)
-            if typeSyntax.is(OptionalTypeSyntax.self) ||
-                typeSyntax.is(ImplicitlyUnwrappedOptionalTypeSyntax.self) ||
-                typeName.contains("Optional")
-            {
-                let diagnostic = Diagnostic.optionalTypeNotSupported(property: property, typeName: typeName)
-                context.diagnose(diagnostic)
-                return []
-            }
-        }
+//        if let typeAnnotation = binding.typeAnnotation {
+//            let typeSyntax = typeAnnotation.type
+//            let typeName = typeSyntax.description.trimmingCharacters(in: .whitespacesAndNewlines)
+//            if typeSyntax.is(OptionalTypeSyntax.self) ||
+//                typeSyntax.is(ImplicitlyUnwrappedOptionalTypeSyntax.self) ||
+//                typeName.contains("Optional")
+//            {
+//                let diagnostic = Diagnostic.optionalTypeNotSupported(property: property, typeName: typeName)
+//                context.diagnose(diagnostic)
+//                return []
+//            }
+//        }
 
         // If @DefaultsBacked(originalKey:) or @DefaultsKey(originalKey:) is annotated, use the user-specified Key
         // If both add originalKey, @DefaultsBacked will take precedence.
