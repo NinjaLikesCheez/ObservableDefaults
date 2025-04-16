@@ -27,55 +27,50 @@
 import Foundation
 
 public struct UserDefaultsWrapper<Value> {
-    private init() {}
+  private init() {}
 
-    // MARK: - Get Values
-
-    public nonisolated static func getValue(_ key: String, _ defaultValue: Value, _ store: UserDefaults) -> Value
-    where Value: RawRepresentable, Value.RawValue: UserDefaultsPropertyListValue {
-        guard let rawValue = store.object(forKey: key) as? Value.RawValue else {
-            return defaultValue
-        }
-        return Value(rawValue: rawValue) ?? defaultValue
+  // MARK: - Get Values
+  public nonisolated static func getValue(
+    _ key: String, _ defaultValue: Value, _ store: UserDefaults
+  ) -> Value where Value: Codable {
+    if isNativeType(Value.self) {
+      return store.value(forKey: key) as? Value ?? defaultValue
     }
 
-    public nonisolated static func getValue<R>(_ key: String, _ defaultValue: Value, _ store: UserDefaults) -> Value
-    where Value == R?, R: RawRepresentable, R.RawValue: UserDefaultsPropertyListValue {
-        guard let rawValue = store.object(forKey: key) as? R.RawValue else {
-            return defaultValue
-        }
-        return R(rawValue: rawValue) ?? defaultValue
+    guard let data = store.data(forKey: key) else { return defaultValue }
+    do {
+      return try JSONDecoder().decode(Value.self, from: data)
+    } catch {
+      fatalError(
+        "Unable to decode Value from data: \(String(data: data, encoding: .utf8) ?? "<undecodable data>")"
+      )
+    }
+  }
+
+	private static func isNativeType(_ type: Any.Type) -> Bool {
+			switch type {
+			case is String.Type, is Bool.Type, is Int.Type, is Float.Type, is Double.Type, is Date.Type:
+					return true
+			default:
+					return false
+			}
+	}
+
+  public nonisolated static func setValue(
+    _ key: String, _ newValue: Value, _ store: UserDefaults
+  ) where Value: Codable {
+    store.set(encode(newValue), forKey: key)
+  }
+
+  private static func encode<R>(_ value: R) -> Any where R: Codable {
+    if isNativeType(R.self) {
+      return value
     }
 
-    public nonisolated static func getValue(_ key: String, _ defaultValue: Value, _ store: UserDefaults) -> Value
-    where Value: UserDefaultsPropertyListValue {
-        return store.object(forKey: key) as? Value ?? defaultValue
+    do {
+      return try JSONEncoder().encode(value)
+    } catch {
+      fatalError("Failed to encode value: \(value)")
     }
-
-    public nonisolated static func getValue<R>(_ key: String, _ defaultValue: Value, _ store: UserDefaults) -> Value
-    where Value == R?, R: UserDefaultsPropertyListValue {
-        return store.object(forKey: key) as? R ?? defaultValue
-    }
-
-    // MARK: - Set Values
-
-    public nonisolated static func setValue(_ key: String, _ newValue: Value, _ store: UserDefaults)
-    where Value: RawRepresentable, Value.RawValue: UserDefaultsPropertyListValue {
-        store.set(newValue.rawValue, forKey: key)
-    }
-
-    public nonisolated static func setValue<R>(_ key: String, _ newValue: Value, _ store: UserDefaults)
-    where Value == R?, R: RawRepresentable, R.RawValue: UserDefaultsPropertyListValue {
-        store.set(newValue?.rawValue, forKey: key)
-    }
-
-    public nonisolated static func setValue(_ key: String, _ newValue: Value, _ store: UserDefaults)
-    where Value: UserDefaultsPropertyListValue {
-        store.set(newValue, forKey: key)
-    }
-
-    public nonisolated static func setValue<R>(_ key: String, _ newValue: Value, _ store: UserDefaults)
-    where Value == R?, R: UserDefaultsPropertyListValue {
-        store.set(newValue, forKey: key)
-    }
+  }
 }
